@@ -1,6 +1,6 @@
 # POSIX utils
 
-Some coreutils rewritten as POSIX shell scripts.
+Alternative to some coreutils written in POSIX shell.
 
 ## License
 
