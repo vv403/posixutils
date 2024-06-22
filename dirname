@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+set -e -u
+
+usage="Usage: ${0} <name...>"
+trap 'printf "%s\n" "$usage" >&2' EXIT
+for name in "${@:?missing required argument: name}"; do
+    trap '' EXIT
+
+    if [ -z "$name" ]; then
+        printf '.\n'
+        exit
+    fi
+
+    until [ "$name" = "${name%/}" ]; do
+        name="${name%/}"
+    done
+
+    name="${name%/*}"
+
+    printf '%s\n' "${name:-/}"
+done
