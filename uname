@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+
+set -e -u
+
+read -r SYSTEM < /proc/sys/kernel/ostype
+
+case "${0##*/}" in
+    arch) set -- -m ;;
+    hostname) set -- -n ;;
+esac
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -a) set -- -m -n -r -s -v; continue ;;
+        -m) read -r architecture < /proc/sys/kernel/arch ;;
+        -n) read -r hostname < /proc/sys/kernel/hostname ;;
+        -r) read -r release < /proc/sys/kernel/osrelease ;;
+        -s) system="$SYSTEM" ;;
+        -v) read -r version < /proc/sys/kernel/version ;;
+    esac
+    shift
+done
+
+uname="${system:+"$system" }"
+uname="${uname}${hostname:+"$hostname" }"
+uname="${uname}${release:+"$release" }"
+uname="${uname}${version:+"$version" }"
+uname="${uname}${architecture:+"$architecture" }"
+uname="${uname:-"$SYSTEM"}"
+printf '%s\n' "${uname% }"
