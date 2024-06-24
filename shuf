@@ -1,0 +1,80 @@
+#!/usr/bin/env sh
+
+set -e -u
+
+__shuf() {
+    awk -f "${0}.awk" -v seed="$$" | sort -n | while read -r _ line; do
+        printf '%s%b' "$line" "$separator"
+    done
+}
+
+_shuf() {
+    if [ "${1:-}" = -e ]; then
+        shift
+        printf '%s\n' "$@" | __shuf
+    elif [ -n "${range:-}" ]; then
+        seq "$min" "$max" | __shuf
+    else
+        if [ "$#" -eq 0 ]; then
+            set -- -
+        fi
+
+        file="$1"
+        case "$file" in
+            -) __shuf ;;
+            *) __shuf < "$file" ;;
+        esac
+    fi 
+}
+
+shuf() {
+    if [ -n "${count:-}" ]; then
+        _shuf "$@" | head -n "$count"
+    else
+        _shuf "$@"
+    fi
+}
+
+usage="Usage: ${0} [-e] [-i min-max] [-n count] [-o output] [-z] [file...]
+    -e                treat each argument as input line
+    -i min-max        treat each number MIN through MAX as input line
+    -n count          output at most COUNT lines
+    -o file           write result to FILE instead of standard output
+    -z                line delimeter is NUL, not newline
+"
+trap 'printf "%s" "$usage" >&2' EXIT
+separator='\n'
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -e)
+            set -- "$@" -- -e
+            shift
+            until [ "$1" != "${1#-}" ]; do
+                set -- "$@" "$1"
+                shift
+            done
+            set -- _ "$@"
+            ;;
+        -i)
+            range="${2:?missing required value: range}"
+            min="${range%-*}"
+            max="${range#*-}"
+            shift
+            ;;
+        -n) count="${2:?missing required value: count}"; shift ;;
+        -o) output="${2:?missing required value: output}"; shift ;;
+        -z) separator='\0' ;;
+        -h) exit ;;
+        --) shift; break ;;
+        -?*) : "${error:?no such option: ${1}}" ;;
+        *) break ;;
+    esac
+    shift
+done
+trap '' EXIT
+
+if [ -n "${output:-}" ]; then
+    shuf "$@" > "$output"
+else
+    shuf "$@"
+fi
