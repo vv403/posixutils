@@ -3,7 +3,7 @@
 set -e -u
 
 __shuf() {
-    awk "BEGIN { srand(${$}) } { printf \"%06d %s\n\", rand() * 1000000, $0 }" | sort -n | while read -r _ line; do
+    awk "BEGIN { srand(${$}) } { printf \"%06d %s\n\", rand() * 1000000, \$0 }" | sort -n | while read -r _ line; do
         printf '%s%b' "$line" "$separator"
     done
 }
