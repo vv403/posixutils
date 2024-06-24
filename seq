@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+
+set -e -u
+
+usage="Usage: ${0} [-s SEPARATOR] [-w] <last>
+       ${0} [-s SEPARATOR] [-w] <first> <last>
+       ${0} [-s SEPARATOR] [-w] <first> <increment> <last>
+    -s SEPARATOR        use SEPARATOR to separate numbers (default: \n)
+    -w                  equalize width by padding with leading zeroes
+"
+trap 'printf "%s" "$usage" >&2' EXIT
+separator='
+'
+padding=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -s) separator="${2:?no required value: separator}"; shift ;;
+        -w) padding= ;;
+        -h) exit ;;
+        --) shift; break ;;
+        -?*) : "${error:?no such option: ${1}}" ;;
+        *) break ;;
+    esac
+    shift
+done
+
+first=1
+increment=1
+case "$#" in
+    0) : "${error:?at least one positional argument is required}" ;;
+    1) last="$1" ;;
+    2) first="$1"; last="$2" ;;
+    3) first="$1"; increment="$2"; last="$3" ;;
+esac
+padding="${padding:-"${#last}"}"
+if [ "$increment" -lt 0 ]; then
+    operator=-ge
+else
+    operator=-le
+fi
+trap '' EXIT
+
+# TODO: add support for floating point increment
+i="$first"
+# shellcheck disable=SC1009,SC1072,SC1073
+while [ "$i" "$operator" "$last" ]; do
+    if [ "$i" -ne "$first" ]; then
+        printf '%s' "$separator"
+    fi
+    printf "%0${padding}d" "$i"
+    i="$((i + increment))"
+done
+printf '\n'
