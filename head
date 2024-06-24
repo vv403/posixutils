@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+
+set -e -u
+
+head() {
+    i=1
+    while [ "$i" -le "$number" ]; do
+        if IFS= read -r line; then
+            printf '%s\n' "$line"
+        else
+            printf '%s' "$line"
+            break
+        fi
+        i="$((i + 1))"
+    done
+}
+
+usage="Usage: ${0} [-n number] <file...>
+    -n number        print the first NUMBER lines instead of the first 10
+"
+trap 'printf "%s" "$usage" >&2' EXIT
+number=10
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -n) number="${2:?missing required argument: number}"; shift ;;
+        -h) exit ;;
+        --) shift; break ;;
+        -?*) : "${error:?no such option: ${1}}" ;;
+        *) break ;;
+    esac
+    shift
+done
+trap '' EXIT
+
+if [ "$#" -gt 0 ]; then
+    is_first=y
+    for file in "$@"; do
+        if [ "$is_first" = n ]; then
+            printf '\n'
+        fi
+        if [ "$#" -gt 1 ]; then
+            case "$file" in
+                -) printf '==> standard input <==\n' ;;
+                *) printf '==> %s <==\n' "$file" ;;
+            esac
+        fi
+        case "$file" in
+            -) head ;;
+            *) head < "$file" ;;
+        esac
+        is_first=n
+    done
+else
+    head
+fi
